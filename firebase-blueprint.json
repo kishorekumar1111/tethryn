@@ -1,0 +1,67 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Experience": {
+      "title": "Experience",
+      "description": "A created storytelling experience",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "templateId": { "type": "string" },
+        "slug": { "type": "string" },
+        "recipientName": { "type": "string" },
+        "senderName": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "object" },
+        "isPublished": { "type": "boolean" },
+        "views": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["authorId", "templateId", "slug", "recipientName", "title", "content"]
+    },
+    "Template": {
+      "title": "Template",
+      "description": "A design template for experiences",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "previewUrl": { "type": "string" },
+        "thumbnail": { "type": "string" },
+        "isExternal": { "type": "boolean" },
+        "authorId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "category"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "Global user registry"
+    },
+    "experiences/{experienceId}": {
+      "schema": "Experience",
+      "description": "Shared and private colletions of stories"
+    },
+    "templates/{templateId}": {
+      "schema": "Template",
+      "description": "Registered templates for the platform"
+    }
+  }
+}
