@@ -8,27 +8,12 @@ import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const location = useLocation();
 
   useEffect(() => {
     return onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-      } else {
-        const localUid = localStorage.getItem('local_dev_user_uid');
-        if (localUid) {
-          setUser({
-            uid: localUid,
-            email: 'guest@localhost.local',
-            displayName: 'Guest Developer',
-            photoURL: null,
-            isAnonymous: true,
-          });
-        } else {
-          setUser(null);
-        }
-      }
+      setUser(currentUser);
     });
   }, []);
 
@@ -81,12 +66,7 @@ export default function Navbar() {
                   <span className="text-[12px] font-medium text-tethryn-ink">Vault</span>
                 </Link>
                 <button 
-                  onClick={() => {
-                    localStorage.removeItem('local_dev_user_uid');
-                    signOut(auth).then(() => {
-                      window.location.reload();
-                    });
-                  }}
+                  onClick={() => signOut(auth)}
                   className="text-tethryn-muted hover:text-red-500 transition-colors"
                   title="Sign Out"
                 >
