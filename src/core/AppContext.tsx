@@ -5,7 +5,7 @@ import { TethrynExperience } from '../types/tethryn';
 import { tethrynService } from '../services/tethrynService';
 
 interface AppState {
-  user: User | null;
+  user: any;
   loading: boolean;
   experiences: TethrynExperience[];
   refreshExperiences: () => Promise<void>;
@@ -14,7 +14,7 @@ interface AppState {
 const AppContext = createContext<AppState | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [experiences, setExperiences] = useState<TethrynExperience[]>([]);
 
@@ -33,11 +33,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
       if (u) {
+        setUser(u);
         loadExperiences(u.uid);
       } else {
-        setExperiences([]);
+        const localUid = localStorage.getItem('local_dev_user_uid');
+        if (localUid) {
+          const guestUser = {
+            uid: localUid,
+            email: 'guest@localhost.local',
+            displayName: 'Guest Developer',
+            isAnonymous: true,
+          } as any;
+          setUser(guestUser);
+          loadExperiences(localUid);
+        } else {
+          setUser(null);
+          setExperiences([]);
+        }
       }
       setLoading(false);
     });

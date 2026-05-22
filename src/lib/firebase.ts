@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, browserPopupRedirectResolver } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, browserPopupRedirectResolver, signInAnonymously } from 'firebase/auth';
 import { 
   getFirestore, 
   doc, 
@@ -84,4 +84,13 @@ export const signInWithGoogle = async () => {
   })();
 
   return signInPromise;
+};
+
+export const signInAsGuest = async () => {
+  try {
+    return await signInAnonymously(auth);
+  } catch (error) {
+    console.error('Anonymous Auth Error:', error);
+    throw error;
+  }
 };

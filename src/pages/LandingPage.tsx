@@ -1,7 +1,7 @@
 import { motion } from 'motion/react';
 import { ArrowRight, Shield, Globe, Zap, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { signInWithGoogle } from '../lib/firebase';
+import { signInWithGoogle, signInAsGuest } from '../lib/firebase';
 import { getAllTemplates } from '../templates/registry';
 import { useState } from 'react';
 import { CinematicHeroObject, AtmosphericParticles } from '../components/AtmosphericHero';
@@ -49,20 +49,42 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const { user } = useApp();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isGuestLoggingIn, setIsGuestLoggingIn] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const handleLogin = async () => {
     setIsLoggingIn(true);
+    setLoginError(null);
     try {
       if (user) {
         navigate('/dashboard');
         return;
       }
-      await signInWithGoogle();
-      navigate('/dashboard');
-    } catch (err) {
+      const result = await signInWithGoogle();
+      if (result) {
+        navigate('/dashboard');
+      }
+    } catch (err: any) {
       console.error(err);
+      setLoginError(err?.message || "Sign in failed. On localhost, click 'Continue as Guest' to test instantly with mock auth.");
     } finally {
       setIsLoggingIn(false);
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    setIsGuestLoggingIn(true);
+    setLoginError(null);
+    try {
+      await signInAsGuest();
+      navigate('/dashboard');
+    } catch (err: any) {
+      console.warn("Guest mode fallback to offline simulation context:", err);
+      const localUid = 'dev_guest_' + Math.random().toString(36).substring(7);
+      localStorage.setItem('local_dev_user_uid', localUid);
+      window.location.reload();
+    } finally {
+      setIsGuestLoggingIn(false);
     }
   };
 
@@ -123,36 +145,68 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.7, duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-                className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-8 lg:gap-16 w-full sm:w-auto"
+                className="flex flex-col items-center lg:items-start gap-6 w-full"
               >
-                <button 
-                  onClick={handleLogin}
-                  disabled={isLoggingIn}
-                  className="btn-premium group px-12 py-6 sm:px-16 sm:py-8 lg:px-20 lg:py-10 text-[14px] sm:text-[16px] lg:text-[18px] shadow-[0_24px_48px_rgba(133,123,239,0.12)] hover:shadow-[0_48px_96px_rgba(133,123,239,0.2)] w-[85%] sm:w-auto lg:min-w-[320px] relative overflow-hidden"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-tethryn-accent to-tethryn-accent-hover opacity-100 group-hover:opacity-90 transition-opacity" />
-                  <div className="relative z-10 flex items-center justify-center space-x-4">
-                    {isLoggingIn ? (
-                      <>
-                        <Loader2 size={24} className="animate-spin opacity-60" />
-                        <span className="tracking-[0.15em]">CONNECTING...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="tracking-[0.08em] font-medium">START CREATING</span>
-                        <ArrowRight size={20} strokeWidth={1.5} className="group-hover:translate-x-2 transition-transform duration-500" />
-                      </>
-                    )}
-                  </div>
-                </button>
-                
-                <Link 
-                  to="/gallery"
-                  className="text-[12px] sm:text-[14px] font-bold uppercase tracking-[0.4em] lg:tracking-[0.6em] text-tethryn-muted hover:text-tethryn-accent transition-all group flex items-center space-x-4 lg:space-x-6 relative py-4"
-                >
-                  <span className="relative z-10 opacity-70 group-hover:opacity-100 transition-opacity">THE GALLERY</span>
-                  <div className="absolute bottom-0 left-0 w-0 h-[1px] bg-tethryn-accent/60 group-hover:w-full transition-all duration-1000 ease-in-out" />
-                </Link>
+                <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 w-full sm:w-auto">
+                  <button 
+                    onClick={handleLogin}
+                    disabled={isLoggingIn || isGuestLoggingIn}
+                    className="btn-premium group px-12 py-6 sm:px-16 sm:py-8 lg:px-20 lg:py-10 text-[14px] sm:text-[16px] lg:text-[18px] shadow-[0_24px_48px_rgba(133,123,239,0.12)] hover:shadow-[0_48px_96px_rgba(133,123,239,0.2)] w-[85%] sm:w-auto lg:min-w-[320px] relative overflow-hidden"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-tethryn-accent to-tethryn-accent-hover opacity-100 group-hover:opacity-90 transition-opacity" />
+                    <div className="relative z-10 flex items-center justify-center space-x-4">
+                      {isLoggingIn ? (
+                        <>
+                          <Loader2 size={24} className="animate-spin opacity-60" />
+                          <span className="tracking-[0.15em]">CONNECTING...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="tracking-[0.08em] font-medium font-sans uppercase">Sign In with Google</span>
+                          <ArrowRight size={20} strokeWidth={1.5} className="group-hover:translate-x-2 transition-transform duration-500" />
+                        </>
+                      )}
+                    </div>
+                  </button>
+
+                  <button 
+                    onClick={handleGuestLogin}
+                    disabled={isLoggingIn || isGuestLoggingIn}
+                    style={{ background: 'rgba(133, 123, 239, 0.05)' }}
+                    className="group px-12 py-6 sm:px-16 sm:py-8 lg:px-16 lg:py-10 text-[14px] sm:text-[16px] border border-tethryn-border hover:border-tethryn-accent rounded-2xl w-[85%] sm:w-auto transition-all"
+                  >
+                    <div className="flex items-center justify-center space-x-3 text-tethryn-ink hover:text-tethryn-accent duration-300">
+                      {isGuestLoggingIn ? (
+                        <>
+                          <Loader2 size={18} className="animate-spin opacity-60" />
+                          <span className="tracking-widest uppercase text-[12px] font-sans">Guest Loading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="tracking-widest uppercase text-[12px] font-sans font-medium">Continue as Guest (Local)</span>
+                        </>
+                      )}
+                    </div>
+                  </button>
+                </div>
+
+                {loginError && (
+                  <p className="text-red-500 text-[12px] font-sans text-center lg:text-left mt-2 max-w-md">
+                    {loginError}
+                  </p>
+                )}
+
+                <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-12 w-full justify-center lg:justify-start">
+                  <Link 
+                    to="/gallery"
+                    className="text-[12px] sm:text-[14px] font-bold uppercase tracking-[0.4em] lg:tracking-[0.6em] text-tethryn-muted hover:text-tethryn-accent transition-all group flex items-center space-x-4 lg:space-x-6 py-2"
+                  >
+                    <span className="relative z-10 opacity-70 group-hover:opacity-100 transition-opacity">THE GALLERY</span>
+                  </Link>
+                  <p className="text-[11px] text-tethryn-muted font-sans text-center lg:text-left opacity-60 max-w-xs leading-normal">
+                    Tip: If running locally without config, use Guest login to bypass Google auth instantly and save data inside LocalStorage!
+                  </p>
+                </div>
               </motion.div>
             </div>
 
